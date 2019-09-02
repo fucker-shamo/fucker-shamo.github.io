@@ -43,7 +43,7 @@
 <meta property="og:image" content="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/25.png">
 <meta property="og:image" content="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/26.png">
 <meta property="og:image" content="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/27.png">
-<meta property="og:updated_time" content="2019-09-02T07:25:44.926Z">
+<meta property="og:updated_time" content="2019-09-02T07:41:08.020Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="登陆口js前端加密绕过">
 <meta name="twitter:description" content="@渗透测试 登陆口js前端加密绕过Author: shamo 概述 很多朋友在实战搞站或者挖src时候，遇到web登录口，像抓包看看的时候，你会发现现在的登陆口账号密码很多都是经过js前端加密之后再发送，如下图，我手机号输入的是1388888888，但抓包得到post的user参数是经过js加密的，这样我们想爆破就不能用原来的方法了。 我在网上搜了下资料，大概能分为以下4种方法。参考：https:">
@@ -276,11 +276,10 @@
 </ol>
 <h3 id="实战例子"><a href="#实战例子" class="headerlink" title="实战例子"></a>实战例子</h3><hr>
 <ol>
-<li>这里随便找的一个找回密码功能点<br><img src="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/20.png" alt=""><br>可以看到，我们这里手机随便填了个13888888888，而抓包到的手机号是user参数，而且是js加密了的<br><img src="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/21.png" alt=""></li>
-</ol>
-<p>forward放包后，显示账号尚未注册，你也可以说这里可以遍历手机号来探测注册用户吧，反正我也不怎么挖src</p>
-<ol start="2">
-<li>我们来分析下js代码基本逻辑，可以看到这里有key还有public_key，还new了一个rsakey()，而function RSAKey()是在rsaall.js里面的<br>VOp8bgLrO8LV6xeikpfHsjWT/JEiJeqeFbCIZQlHlNjOncmq5iDfF9uKaJlR0i2lX9wXia+JZZYtnUBaUZeEvFPN2RMsHOJu/hG2KifLNdoGo1Av4ZNXBWqHureO+Vm50bMRWSQCH8lTPXLgOcydPV8EbltttZwBnhJ8UWomhks=</li>
+<li><p>这里随便找的一个找回密码功能点<br><img src="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/20.png" alt=""><br>可以看到，我们这里手机随便填了个13888888888，而抓包到的手机号是user参数，而且是js加密了的<br><img src="https://fucker-shamo.github.io/images/登陆口js前端加密绕过/21.png" alt=""><br>forward放包后，显示账号尚未注册，你也可以说这里可以遍历手机号来探测注册用户吧，反正我也不怎么挖src</p>
+</li>
+<li><p>我们来分析下js代码基本逻辑，可以看到这里有key还有public_key，还new了一个rsakey()，而function RSAKey()是在rsaall.js里面的<br>VOp8bgLrO8LV6xeikpfHsjWT/JEiJeqeFbCIZQlHlNjOncmq5iDfF9uKaJlR0i2lX9wXia+JZZYtnUBaUZeEvFPN2RMsHOJu/hG2KifLNdoGo1Av4ZNXBWqHureO+Vm50bMRWSQCH8lTPXLgOcydPV8EbltttZwBnhJ8UWomhks=</p>
+</li>
 </ol>
 <ol start="3">
 <li>这里也不用管其中过程如何复杂，我们把rsaall.js下载下来，放到server文件里面引入，然后参照这个函数的写法，我们魔改一下server.js文件，再另存为一个就好。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">//手机rsa加密</span><br><span class="line">function do_encrypt(str) &#123;</span><br><span class="line">    var before = new Date();</span><br><span class="line">    var rsa = new RSAKey();</span><br><span class="line">    var key = &quot;010001&quot;;</span><br><span class="line">    var public_key = &quot;96483cb253ae62ffb8bbc3cd5f8fbf4bd3d51ebb32c992bd7649a371bf83ed649cdd3d18f4ea7405438d7393c0c38c0daf5032df5d744e6c189be918fbf937d261e78ef807e173c41dedb7bafb4c72fe00cbc7a677e87e8d972512810a897fd31c8dde1f6607d708ed3e764d35a85a51767d4005ec6935e9c597b397ef46844b&quot;;</span><br><span class="line">    var res;</span><br><span class="line">    rsa.setPublic(public_key, key);</span><br><span class="line">    res = rsa.encrypt(str);</span><br><span class="line">    var after = new Date();</span><br><span class="line">    if (res) &#123;</span><br><span class="line">        return linebrk(hex2b64(res), 64);</span><br><span class="line">    &#125;</span><br><span class="line">    else &#123;</span><br><span class="line">        return &quot;&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
